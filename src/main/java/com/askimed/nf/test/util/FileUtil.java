@@ -19,6 +19,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.zip.GZIPInputStream;
 
+import org.tukaani.xz.XZInputStream;
+
 import groovy.lang.Writable;
 
 public class FileUtil {
@@ -102,26 +104,36 @@ public class FileUtil {
 		return baseDir.toURI().relativize(absoluteFile.toURI()).getPath();
 	}
 
+	public static String getExtension(Path self) {
+		String str = self.getFileName().toString();
+		int ind = str.lastIndexOf('.');
+		if(ind == -1) // file has no .
+			return null;
+		return str.substring(ind);
+		// this will return the empty string if the file ends with a .
+	}
+
 	public static String getMd5(Path self) throws IOException, NoSuchAlgorithmException {
 		Formatter fm = new Formatter();
 		MessageDigest md = MessageDigest.getInstance("MD5");
+		String ext = getExtension(self);
 		// for .gz files, calculate md5 hash on decompressed content
-		if (self.toString().endsWith(".gz")) {
+		if (ext.equals("gz") || ext.equals("xz")) {
 			FileInputStream fis = new FileInputStream(self.toString());
-			GZIPInputStream gzis = new GZIPInputStream(fis);
+			InputStream cis = ext.equals("gz") ? new GZIPInputStream(fis) : new XZInputStream(fis);
 			byte[] buffer = new byte[4096];
-			int read = gzis.read(buffer);
+			int read = cis.read(buffer);
 			while ( read >= 0) {
 				md.update(buffer, 0, read);
-				read = gzis.read(buffer);
+				read = cis.read(buffer, 0, 4096);
 			}
-			gzis.close();
+			cis.close();
 			fis.close();
 		// for other files, calculate md5 hash directly from file
 		} else {
 			md.update(Files.readAllBytes(self));
-	
 		}
+
 		byte[] md5sum = md.digest();
 		for (byte b : md5sum) {
 			fm.format("%02x", b);

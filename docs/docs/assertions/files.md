@@ -7,7 +7,7 @@ nf-test extends `path` by a `md5` property that can be used to compare the file 
 ```Groovy
 assert path(process.out.out_ch.get(0)).md5 == "64debea5017a035ddc67c0b51fa84b16"
 ```
-Note that for gzip compressed files, the `md5` property is calculated after gunzipping the file contents, whereas for other filetypes the `md5` property is directly
+Note that for gzip and xz compressed files, the `md5` property is calculated after decompressing the file contents, whereas for other filetypes the `md5` property is directly
 calculated on the file itself.
 
 ## JSON Files
